@@ -80,7 +80,7 @@
       </div>
     </header>
 
-    <main class="conteudo">
+    <main class="conteudo" id="pagina-inicio">
       <!-- Resumo -->
       <div class="resumo">
         <button id="card-disponivel" class="card card--acao" type="button">
@@ -118,12 +118,81 @@
       </p>
     </main>
 
-    <footer class="rodape-acoes">
-      <button id="btn-instalar" class="btn btn--ghost btn--instalar" type="button" hidden>
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M5 20h14v-2H5v2M19 9h-4V3H9v6H5l7 7 7-7Z"/></svg>
-        Instalar app
-      </button>
-      <button id="btn-nova-conta" class="btn btn--primario btn--grande" type="button">+ Nova conta</button>
+
+    <!-- ============ ABA: RELATÓRIOS ============ -->
+    <main class="conteudo" id="pagina-relatorios" hidden>
+      <div class="periodo-toggle" role="group" aria-label="Período do relatório">
+        <button type="button" class="periodo-btn is-ativo" data-periodo="6">6 meses</button>
+        <button type="button" class="periodo-btn" data-periodo="12">12 meses</button>
+        <button type="button" class="periodo-btn" data-periodo="todos">Tudo</button>
+      </div>
+
+      <div class="resumo">
+        <div class="resumo__linha">
+          <div class="card card--pequeno">
+            <span class="card__rotulo">Total pago</span>
+            <span id="rel-total-pago" class="card__valor card__valor--positivo">R$ 0,00</span>
+          </div>
+          <div class="card card--pequeno">
+            <span class="card__rotulo">Total pendente</span>
+            <span id="rel-total-pendente" class="card__valor card__valor--neutro">R$ 0,00</span>
+          </div>
+        </div>
+        <div class="resumo__linha">
+          <div class="card card--pequeno">
+            <span class="card__rotulo">Total disponível</span>
+            <span id="rel-total-disponivel" class="card__valor card__valor--neutro">R$ 0,00</span>
+          </div>
+          <div class="card card--pequeno">
+            <span class="card__rotulo">Saldo do período</span>
+            <span id="rel-saldo-periodo" class="card__valor">R$ 0,00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lista-cabecalho">
+        <h2>Gasto por mês</h2>
+      </div>
+      <div id="rel-grafico" class="grafico-barras" role="img" aria-label="Gráfico de contas pagas e pendentes por mês"></div>
+      <p id="rel-grafico-legenda" class="grafico-legenda">
+        <span><i class="grafico-legenda__bola grafico-legenda__bola--paga"></i>Pago</span>
+        <span><i class="grafico-legenda__bola grafico-legenda__bola--pendente"></i>Pendente</span>
+      </p>
+
+      <div class="lista-cabecalho">
+        <h2>Quem cadastrou</h2>
+      </div>
+      <div id="rel-por-usuario" class="rel-usuarios"></div>
+
+      <div class="lista-cabecalho">
+        <h2>Histórico de meses</h2>
+      </div>
+      <ul id="rel-historico" class="lista-historico"></ul>
+      <p id="rel-historico-vazio" class="lista-vazia lista-vazia--compacta" hidden>
+        Nenhum mês com contas ou dinheiro cadastrado ainda.
+      </p>
+    </main>
+
+
+    <footer class="rodape">
+      <div class="rodape-acoes" id="rodape-inicio">
+        <button id="btn-instalar" class="btn btn--ghost btn--instalar" type="button" hidden>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M5 20h14v-2H5v2M19 9h-4V3H9v6H5l7 7 7-7Z"/></svg>
+          Instalar app
+        </button>
+        <button id="btn-nova-conta" class="btn btn--primario btn--grande" type="button">+ Nova conta</button>
+      </div>
+
+      <nav class="abas-nav" aria-label="Navegação principal">
+        <button type="button" class="aba-btn is-ativa" data-aba="inicio">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 3 4 9v12h5v-7h6v7h5V9z"/></svg>
+          Início
+        </button>
+        <button type="button" class="aba-btn" data-aba="relatorios">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M5 21V10h3v11H5m6 0V3h3v18h-3m6 0V14h3v7h-3Z"/></svg>
+          Relatórios
+        </button>
+      </nav>
     </footer>
   </section>
 
@@ -150,6 +219,29 @@
           <span>Observação <span class="campo__opcional">(opcional)</span></span>
           <textarea id="conta-observacao" rows="3" maxlength="300" placeholder="Ex.: parcela 3/12, referente a..."></textarea>
         </label>
+
+        <label class="campo-checkbox">
+          <input type="checkbox" id="conta-parcelado" />
+          <span>É uma compra parcelada?</span>
+        </label>
+
+        <div id="campo-parcelamento" hidden>
+          <div class="parcela-grid">
+            <label class="campo">
+              <span>Parcela atual</span>
+              <input id="conta-parcela-atual" type="number" min="1" step="1" value="1" inputmode="numeric" />
+            </label>
+            <label class="campo">
+              <span>Total de parcelas</span>
+              <input id="conta-parcela-total" type="number" min="1" step="1" placeholder="Ex.: 48" inputmode="numeric" />
+            </label>
+          </div>
+          <p class="parcela-info">Valor total da compra: <strong id="parcela-valor-total">R$ 0,00</strong></p>
+          <p class="campo__ajuda">
+            A partir do mês seguinte, a próxima parcela é lançada sozinha quando você abrir aquele mês no app.
+          </p>
+        </div>
+
         <div class="modal__acoes">
           <button type="button" class="btn btn--ghost" data-fechar-modal>Cancelar</button>
           <button type="submit" class="btn btn--primario">Salvar</button>
@@ -172,6 +264,14 @@
         <span class="detalhe__rotulo">Valor</span>
         <span id="detalhe-valor" class="detalhe__valor-texto">—</span>
       </div>
+      <div class="detalhe__linha" id="detalhe-linha-desconto" hidden>
+        <span class="detalhe__rotulo">Desconto</span>
+        <span id="detalhe-desconto-texto" class="detalhe__valor-texto detalhe__valor-texto--positivo">—</span>
+      </div>
+      <div class="detalhe__linha" id="detalhe-linha-parcela" hidden>
+        <span class="detalhe__rotulo">Parcela</span>
+        <span id="detalhe-parcela-texto">—</span>
+      </div>
       <div class="detalhe__linha" id="detalhe-linha-vencimento" hidden>
         <span class="detalhe__rotulo">Vencimento</span>
         <span id="detalhe-vencimento">—</span>
@@ -183,9 +283,21 @@
 
       <p id="detalhe-autor" class="detalhe__autor" hidden></p>
 
-      <div class="modal__acoes">
+      <div class="modal__acoes" id="detalhe-acoes-principais">
         <button type="button" id="btn-detalhe-excluir" class="btn btn--ghost btn--ghost-perigo">Excluir</button>
         <button type="button" id="btn-detalhe-pagar" class="btn btn--primario">Marcar como paga</button>
+      </div>
+
+      <div id="detalhe-form-pagamento" class="detalhe-pagamento" hidden>
+        <label class="campo">
+          <span>Desconto por pagamento adiantado <span class="campo__opcional">(opcional)</span></span>
+          <input id="detalhe-desconto-input" type="text" inputmode="decimal" placeholder="0,00" />
+        </label>
+        <p class="parcela-info">Valor pago: <strong id="detalhe-valor-pago-preview">—</strong></p>
+        <div class="modal__acoes">
+          <button type="button" id="btn-cancelar-pagamento" class="btn btn--ghost">Cancelar</button>
+          <button type="button" id="btn-confirmar-pagamento" class="btn btn--primario">Confirmar</button>
+        </div>
       </div>
     </div>
   </div>

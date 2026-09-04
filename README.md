@@ -9,9 +9,16 @@ Web app (PWA) de controle financeiro mensal, de uso pessoal do **Davi** e da **K
 - **Resumo**: Dinheiro disponível, Total a pagar e Saldo restante (verde/vermelho).
 - **Dinheiro disponível**: várias fontes por mês — dinheiro em espécie e/ou conta bancária (com nome do banco) — cada uma some/desmarca independente; o card mostra a soma de tudo.
 - **Lista de contas**: adicione (com vencimento e observação opcionais, só pra registro), marque como paga (fica riscada) ou exclua. Toque na conta pra ver os detalhes completos (valor, vencimento, observação, quem cadastrou). O resumo atualiza sozinho. Conta vencida e ainda não paga aparece destacada em vermelho.
+- **Compra parcelada**: ao criar a conta, marque "É uma compra parcelada?" e informe a parcela atual e o total (ex.: 1/48). O app mostra o valor total da compra e, a partir do mês seguinte, lança sozinho a próxima parcela quando você abrir aquele mês — sem precisar recadastrar nada. (Ver limitação abaixo.)
+- **Desconto por pagamento adiantado**: ao marcar uma conta como paga pelo modal de detalhes, dá pra informar um desconto — o valor pago (já descontado) é o que entra nos totais e no histórico; o checkbox rápido da lista continua marcando sem desconto, pro dia a dia.
+- **Relatórios** (aba própria): resumo de total pago/pendente/disponível e saldo do período (6 meses, 12 meses ou tudo), gráfico de barras por mês (pago x pendente), quanto cada um (Davi/Kauane) cadastrou, e histórico de meses — toque em um mês do histórico pra abrir ele na aba Início.
 - **Quem fez o quê**: toda conta e toda fonte de dinheiro guarda, discretamente, quem cadastrou (Davi ou Kauane).
 - **Offline**: funciona sem internet e pode ser **instalado na tela inicial** do celular.
 - Os dados ficam no `localStorage` do próprio aparelho (nada vai para servidor).
+
+### Limitação do parcelamento
+
+Como é um app estático (sem servidor/backend), ele não consegue "acordar sozinho" todo mês pra lançar a parcela — a próxima parcela só é criada quando **alguém abre aquele mês específico no app** (a navegação é sequencial: se você pular vários meses de uma vez, ela só aparece quando você efetivamente visitar cada mês em ordem). Não há como cancelar um parcelamento pela metade — dá pra excluir a parcela de um mês específico, mas se aquele mês for reaberto depois, ela é relançada (ela só "esquece" se a parcela anterior da cadeia também for excluída).
 
 ## Estrutura
 
