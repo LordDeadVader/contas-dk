@@ -28,28 +28,71 @@ const Store = (() => {
     localStorage.setItem(CHAVE, JSON.stringify(dados));
   }
 
-  /** Retorna o mês (cria vazio se não existir). Chave no formato "AAAA-MM". */
-  function mes(chave) {
-    const dados = _lerTudo();
-    if (!dados[chave]) dados[chave] = { renda: 0, contas: [] };
-    return dados[chave];
+  function _gerarId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   }
 
-  function definirRenda(chave, valor) {
+  /**
+   * Retorna o mês (cria vazio se não existir). Chave no formato "AAAA-MM".
+   * Também migra meses antigos, que guardavam um único número em "renda",
+   * para a lista "rendas" (várias fontes: dinheiro/banco).
+   */
+  function mes(chave) {
     const dados = _lerTudo();
-    if (!dados[chave]) dados[chave] = { renda: 0, contas: [] };
-    dados[chave].renda = Math.max(0, Number(valor) || 0);
+    let m = dados[chave];
+    let mudou = false;
+
+    if (!m) {
+      m = { rendas: [], contas: [] };
+      dados[chave] = m;
+      mudou = true;
+    }
+    if (!Array.isArray(m.rendas)) {
+      m.rendas = m.renda
+        ? [{ id: _gerarId(), tipo: 'dinheiro', banco: null, valor: Number(m.renda) || 0 }]
+        : [];
+      delete m.renda;
+      mudou = true;
+    }
+    if (!Array.isArray(m.contas)) {
+      m.contas = [];
+      mudou = true;
+    }
+
+    if (mudou) _salvarTudo(dados);
+    return m;
+  }
+
+  function adicionarRenda(chave, tipo, banco, valor, criadoPor) {
+    mes(chave); // garante estrutura/migração já salva
+    const dados = _lerTudo();
+    dados[chave].rendas.push({
+      id: _gerarId(),
+      tipo: tipo === 'banco' ? 'banco' : 'dinheiro',
+      banco: tipo === 'banco' ? (banco || '').trim() : null,
+      valor: Math.max(0, Number(valor) || 0),
+      criadoPor: criadoPor || null,
+    });
     _salvarTudo(dados);
   }
 
-  function adicionarConta(chave, nome, valor, vencimento) {
+  function excluirRenda(chave, id) {
     const dados = _lerTudo();
-    if (!dados[chave]) dados[chave] = { renda: 0, contas: [] };
+    if (!dados[chave]) return;
+    dados[chave].rendas = (dados[chave].rendas || []).filter((r) => r.id !== id);
+    _salvarTudo(dados);
+  }
+
+  function adicionarConta(chave, nome, valor, vencimento, observacao, criadoPor) {
+    mes(chave); // garante estrutura/migração já salva
+    const dados = _lerTudo();
     dados[chave].contas.push({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      id: _gerarId(),
       nome: nome.trim(),
       valor: Math.max(0, Number(valor) || 0),
       vencimento: vencimento || null, // "AAAA-MM-DD" ou null (opcional, só pra registro)
+      observacao: (observacao || '').trim(), // texto livre, opcional
+      criadoPor: criadoPor || null, // quem cadastrou (Davi/Kauane), só pra registro
       paga: false,
     });
     _salvarTudo(dados);
@@ -69,7 +112,14 @@ const Store = (() => {
     _salvarTudo(dados);
   }
 
-  return { mes, definirRenda, adicionarConta, alternarPaga, excluirConta };
+  return {
+    mes,
+    adicionarRenda,
+    excluirRenda,
+    adicionarConta,
+    alternarPaga,
+    excluirConta,
+  };
 })();
 
 
@@ -252,11 +302,12 @@ const Painel = (() => {
     const mesDados = Store.mes(chave());
     $('#mes-titulo').textContent = Formato.rotuloMes(dataAtual);
 
+    const disponivel = mesDados.rendas.reduce((s, r) => s + r.valor, 0);
     const totalPagar = mesDados.contas.reduce((s, c) => s + c.valor, 0);
     const totalPago = mesDados.contas.filter((c) => c.paga).reduce((s, c) => s + c.valor, 0);
-    const saldo = mesDados.renda - totalPagar;
+    const saldo = disponivel - totalPagar;
 
-    $('#valor-disponivel').textContent = Formato.dinheiro(mesDados.renda);
+    $('#valor-disponivel').textContent = Formato.dinheiro(disponivel);
     $('#valor-total').textContent = Formato.dinheiro(totalPagar);
 
     const elSaldo = $('#valor-saldo');
@@ -295,13 +346,21 @@ const Painel = (() => {
            </span>`
         : '';
 
+      const obsMarca = conta.observacao ? '<span class="conta__obs-marca">📝</span>' : '';
+      const autor = conta.criadoPor
+        ? `<span class="conta__autor">${escapar(conta.criadoPor)}</span>`
+        : '';
+
       li.innerHTML = `
         <input type="checkbox" class="conta__check" ${conta.paga ? 'checked' : ''}
                aria-label="Marcar ${conta.nome} como paga" />
-        <div class="conta__info">
-          <div class="conta__nome">${escapar(conta.nome)}</div>
-          <div class="conta__valor">${Formato.dinheiro(conta.valor)}${venc}</div>
-        </div>
+        <button type="button" class="conta__info" aria-label="Ver detalhes de ${escapar(conta.nome)}">
+          <span class="conta__textos">
+            <span class="conta__nome">${escapar(conta.nome)}${obsMarca}</span>
+            <span class="conta__valor">${Formato.dinheiro(conta.valor)}${venc}${autor}</span>
+          </span>
+          <svg class="conta__chevron" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>
+        </button>
         <button class="conta__excluir" type="button" aria-label="Excluir ${escapar(conta.nome)}">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12M19 4h-3.5l-1-1h-5l-1 1H5v2h14V4Z"/></svg>
         </button>`;
@@ -309,6 +368,9 @@ const Painel = (() => {
       li.querySelector('.conta__check').addEventListener('change', () => {
         Store.alternarPaga(chave(), conta.id);
         render();
+      });
+      li.querySelector('.conta__info').addEventListener('click', () => {
+        Modais.abrirDetalhe(conta, chave());
       });
       li.querySelector('.conta__excluir').addEventListener('click', () => {
         Modais.confirmarExclusao(conta, () => {
@@ -336,6 +398,7 @@ const Painel = (() => {
 
 const Modais = (() => {
   let alvoExclusao = null;
+  let tipoRendaAtual = 'dinheiro';
 
   function init() {
     // fechar ao clicar no fundo ou nos botões marcados
@@ -351,20 +414,38 @@ const Modais = (() => {
       const nome = $('#conta-nome').value.trim();
       const valor = Formato.paraNumero($('#conta-valor').value);
       const vencimento = $('#conta-vencimento').value || null;
+      const observacao = $('#conta-observacao').value;
       if (!nome) return;
-      Store.adicionarConta(Painel.chave(), nome, valor, vencimento);
+      const usuario = Auth.sessaoAtual()?.usuario;
+      Store.adicionarConta(Painel.chave(), nome, valor, vencimento, observacao, usuario);
       fecharTodos();
       Painel.render();
       toast('Conta adicionada');
     });
 
+    // alterna entre "Dinheiro" e "Conta bancária" no formulário de renda
+    $$('.renda-tipo-btn').forEach((btn) => {
+      btn.addEventListener('click', () => selecionarTipoRenda(btn.dataset.tipo));
+    });
+
     $('#form-renda').addEventListener('submit', (e) => {
       e.preventDefault();
+      const banco = $('#renda-banco').value.trim();
       const valor = Formato.paraNumero($('#renda-valor').value);
-      Store.definirRenda(Painel.chave(), valor);
-      fecharTodos();
+
+      if (tipoRendaAtual === 'banco' && !banco) {
+        $('#renda-banco').focus();
+        return;
+      }
+
+      const usuario = Auth.sessaoAtual()?.usuario;
+      Store.adicionarRenda(Painel.chave(), tipoRendaAtual, banco, valor, usuario);
+      $('#renda-valor').value = '';
+      $('#renda-banco').value = '';
+      renderRendaLista(Painel.chave());
       Painel.render();
-      toast('Valor atualizado');
+      toast('Fonte adicionada');
+      $('#renda-valor').focus();
     });
 
     $('#btn-confirma-excluir').addEventListener('click', () => {
@@ -388,11 +469,104 @@ const Modais = (() => {
     setTimeout(() => $('#conta-nome').focus(), 50);
   }
 
+  /* ---- Dinheiro disponível (várias fontes: dinheiro / conta bancária) ---- */
+
+  function selecionarTipoRenda(tipo) {
+    tipoRendaAtual = tipo;
+    $$('.renda-tipo-btn').forEach((btn) => btn.classList.toggle('is-ativo', btn.dataset.tipo === tipo));
+    $('#campo-renda-banco').hidden = tipo !== 'banco';
+    $('#renda-valor-rotulo').textContent = tipo === 'banco' ? 'Valor na conta (R$)' : 'Valor em espécie (R$)';
+  }
+
+  function renderRendaLista(chave) {
+    const mesDados = Store.mes(chave);
+    const ul = $('#lista-rendas');
+    ul.innerHTML = '';
+    $('#rendas-vazio').hidden = mesDados.rendas.length > 0;
+
+    for (const r of mesDados.rendas) {
+      const li = document.createElement('li');
+      li.className = 'renda-item';
+      const nome = r.tipo === 'banco' ? (r.banco || 'Conta bancária') : 'Dinheiro em espécie';
+      const icone = r.tipo === 'banco' ? '🏦' : '💵';
+      li.innerHTML = `
+        <span class="renda-item__icone" aria-hidden="true">${icone}</span>
+        <span class="renda-item__info">
+          <span class="renda-item__nome"></span>
+          <span class="renda-item__valor"></span>
+        </span>
+        <button class="renda-item__excluir" type="button" aria-label="Remover ${nome}">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12M19 4h-3.5l-1-1h-5l-1 1H5v2h14V4Z"/></svg>
+        </button>`;
+      // via textContent: sem risco de HTML no nome do banco
+      li.querySelector('.renda-item__nome').textContent = nome;
+      li.querySelector('.renda-item__valor').textContent =
+        Formato.dinheiro(r.valor) + (r.criadoPor ? ` · ${r.criadoPor}` : '');
+      li.querySelector('.renda-item__excluir').addEventListener('click', () => {
+        Store.excluirRenda(chave, r.id);
+        renderRendaLista(chave);
+        Painel.render();
+        toast('Fonte removida');
+      });
+      ul.appendChild(li);
+    }
+
+    const total = mesDados.rendas.reduce((s, r) => s + r.valor, 0);
+    $('#renda-total-valor').textContent = Formato.dinheiro(total);
+  }
+
   function abrirRenda(chave) {
-    const atual = Store.mes(chave).renda;
-    $('#renda-valor').value = atual ? String(atual).replace('.', ',') : '';
+    renderRendaLista(chave);
+    $('#renda-valor').value = '';
+    $('#renda-banco').value = '';
+    selecionarTipoRenda('dinheiro');
     abrir('modal-renda');
-    setTimeout(() => $('#renda-valor').select(), 50);
+    setTimeout(() => $('#renda-valor').focus(), 50);
+  }
+
+  /* ---- Detalhes da conta ---- */
+
+  function abrirDetalhe(conta, chave) {
+    const atrasada = !conta.paga && Formato.dataVencida(conta.vencimento);
+
+    $('#detalhe-nome').textContent = conta.nome;
+    $('#detalhe-valor').textContent = Formato.dinheiro(conta.valor);
+
+    const status = $('#detalhe-status');
+    status.textContent = conta.paga ? 'Paga' : atrasada ? 'Atrasada' : 'Pendente';
+    status.className =
+      'detalhe__status' +
+      (conta.paga ? ' detalhe__status--paga' : atrasada ? ' detalhe__status--atrasada' : '');
+
+    $('#detalhe-linha-vencimento').hidden = !conta.vencimento;
+    if (conta.vencimento) $('#detalhe-vencimento').textContent = Formato.dataCurta(conta.vencimento);
+
+    $('#detalhe-linha-obs').hidden = !conta.observacao;
+    $('#detalhe-observacao').textContent = conta.observacao || '';
+
+    const elAutor = $('#detalhe-autor');
+    elAutor.hidden = !conta.criadoPor;
+    elAutor.textContent = conta.criadoPor ? `Adicionado por ${conta.criadoPor}` : '';
+
+    const btnPagar = $('#btn-detalhe-pagar');
+    btnPagar.textContent = conta.paga ? 'Marcar como não paga' : 'Marcar como paga';
+    btnPagar.onclick = () => {
+      Store.alternarPaga(chave, conta.id);
+      fecharTodos();
+      Painel.render();
+      toast(conta.paga ? 'Conta reaberta' : 'Conta paga');
+    };
+
+    $('#btn-detalhe-excluir').onclick = () => {
+      fecharTodos();
+      confirmarExclusao(conta, () => {
+        Store.excluirConta(chave, conta.id);
+        Painel.render();
+        toast('Conta excluída');
+      });
+    };
+
+    abrir('modal-detalhe');
   }
 
   function confirmarExclusao(conta, aoConfirmar) {
@@ -402,7 +576,7 @@ const Modais = (() => {
     abrir('modal-confirma');
   }
 
-  return { init, abrirConta, abrirRenda, confirmarExclusao, fecharTodos };
+  return { init, abrirConta, abrirRenda, abrirDetalhe, confirmarExclusao, fecharTodos };
 })();
 
 

@@ -340,7 +340,21 @@ input { font-family: inherit; }
   transform: rotate(45deg) translateY(-1px);
 }
 
-.conta__info { flex: 1; min-width: 0; }
+.conta__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  font: inherit;
+}
+.conta__textos { flex: 1; min-width: 0; }
+.conta__chevron { color: var(--texto-suave); flex-shrink: 0; opacity: .7; }
 .conta__nome {
   font-weight: 600;
   white-space: nowrap;
@@ -349,6 +363,12 @@ input { font-family: inherit; }
 }
 .conta--paga .conta__nome { text-decoration: line-through; }
 .conta__valor { font-size: .9rem; color: var(--texto-suave); }
+.conta__obs-marca {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--texto-suave);
+  opacity: .8;
+}
 
 .conta__vencimento {
   display: inline-block;
@@ -357,6 +377,15 @@ input { font-family: inherit; }
   border-left: 1px solid var(--borda);
 }
 .conta__vencimento--atrasada { color: var(--perigo); font-weight: 600; }
+
+.conta__autor {
+  display: inline-block;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--borda);
+  font-size: .8rem;
+  opacity: .8;
+}
 
 .conta__excluir {
   background: transparent;
@@ -377,6 +406,7 @@ input { font-family: inherit; }
   font-size: .95rem;
   padding: 30px 10px;
 }
+.lista-vazia--compacta { padding: 14px 4px; font-size: .85rem; }
 
 
 /* ============ RODAPÉ DE AÇÕES ============ */
@@ -414,6 +444,8 @@ input { font-family: inherit; }
   position: relative;
   width: 100%;
   max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
   background: var(--bg-elevado);
   border: 1px solid var(--borda);
   border-radius: 20px 20px 0 0;
@@ -433,7 +465,8 @@ input { font-family: inherit; }
 .campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .campo span { font-size: .85rem; color: var(--texto-suave); }
 .campo__opcional { opacity: .7; }
-.campo input {
+.campo input,
+.campo textarea {
   padding: 14px;
   border-radius: 12px;
   border: 1px solid var(--borda);
@@ -443,10 +476,123 @@ input { font-family: inherit; }
   outline: none;
   color-scheme: dark;
 }
-.campo input:focus { border-color: var(--primaria); }
+.campo textarea { resize: vertical; min-height: 70px; font-family: inherit; line-height: 1.4; }
+.campo input:focus,
+.campo textarea:focus { border-color: var(--primaria); }
 
 .modal__acoes { display: flex; gap: 10px; margin-top: 6px; }
 .modal__acoes .btn { flex: 1; }
+
+.btn--ghost-perigo { color: var(--perigo); border-color: rgba(239, 68, 68, .4); }
+.btn--ghost-perigo:active { background: rgba(239, 68, 68, .12); }
+
+
+/* ============ DETALHES DA CONTA ============ */
+
+.detalhe__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.detalhe__cabecalho .modal__titulo { margin-bottom: 0; word-break: break-word; }
+
+.detalhe__status {
+  flex-shrink: 0;
+  font-size: .75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-elevado-2);
+  color: var(--texto-suave);
+  white-space: nowrap;
+}
+.detalhe__status--paga { background: rgba(16, 185, 129, .15); color: var(--primaria); }
+.detalhe__status--atrasada { background: rgba(239, 68, 68, .15); color: var(--perigo); }
+
+.detalhe__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--borda);
+}
+.detalhe__rotulo { font-size: .85rem; color: var(--texto-suave); }
+.detalhe__valor-texto { font-size: 1.2rem; font-weight: 700; }
+
+.detalhe__bloco { padding: 12px 0; border-bottom: 1px solid var(--borda); }
+.detalhe__bloco .detalhe__rotulo { display: block; margin-bottom: 6px; }
+.detalhe__obs-texto { white-space: pre-wrap; word-break: break-word; line-height: 1.5; }
+
+.detalhe__autor { font-size: .75rem; color: var(--texto-suave); padding-top: 10px; }
+
+
+/* ============ LISTA DE RENDAS (DINHEIRO DISPONÍVEL) ============ */
+
+.lista-rendas { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+
+.renda-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.renda-item__icone { font-size: 1.2rem; flex-shrink: 0; }
+.renda-item__info { flex: 1; min-width: 0; }
+.renda-item__nome {
+  font-weight: 600;
+  font-size: .92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.renda-item__valor { font-size: .82rem; color: var(--texto-suave); }
+.renda-item__excluir {
+  background: transparent;
+  border: none;
+  color: var(--texto-suave);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.renda-item__excluir:active { background: rgba(239, 68, 68, .15); color: var(--perigo); }
+
+.renda-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  margin-bottom: 16px;
+  border-top: 1px solid var(--borda);
+  border-bottom: 1px solid var(--borda);
+  font-size: 1rem;
+}
+.renda-total strong { font-size: 1.15rem; color: var(--primaria); }
+
+.renda-tipo-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+.renda-tipo-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--borda);
+  background: var(--bg);
+  color: var(--texto-suave);
+  font-size: .9rem;
+  font-weight: 600;
+}
+.renda-tipo-btn.is-ativo {
+  border-color: var(--primaria);
+  color: var(--primaria);
+  background: rgba(16, 185, 129, .1);
+}
 
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sobe { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

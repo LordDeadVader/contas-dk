@@ -6,8 +6,10 @@ Web app (PWA) de controle financeiro mensal, de uso pessoal do **Davi** e da **K
 
 - **Login por PIN** (sem cadastro): escolhe o usuário e digita `1234`.
 - **Painel do mês**: navegue entre meses com as setas.
-- **Resumo**: Dinheiro disponível (editável), Total a pagar e Saldo restante (verde/vermelho).
-- **Lista de contas**: adicione (com data de vencimento opcional, só pra registro), marque como paga (fica riscada) ou exclua. O resumo atualiza sozinho. Conta vencida e ainda não paga aparece destacada em vermelho.
+- **Resumo**: Dinheiro disponível, Total a pagar e Saldo restante (verde/vermelho).
+- **Dinheiro disponível**: várias fontes por mês — dinheiro em espécie e/ou conta bancária (com nome do banco) — cada uma some/desmarca independente; o card mostra a soma de tudo.
+- **Lista de contas**: adicione (com vencimento e observação opcionais, só pra registro), marque como paga (fica riscada) ou exclua. Toque na conta pra ver os detalhes completos (valor, vencimento, observação, quem cadastrou). O resumo atualiza sozinho. Conta vencida e ainda não paga aparece destacada em vermelho.
+- **Quem fez o quê**: toda conta e toda fonte de dinheiro guarda, discretamente, quem cadastrou (Davi ou Kauane).
 - **Offline**: funciona sem internet e pode ser **instalado na tela inicial** do celular.
 - Os dados ficam no `localStorage` do próprio aparelho (nada vai para servidor).
 
