@@ -5,7 +5,7 @@
      - Ao trocar a versão, o cache antigo é limpo.
    ============================================================ */
 
-const VERSAO = 'contasdk-v6';
+const VERSAO = 'contasdk-v7';
 
 const ARQUIVOS = [
   './',

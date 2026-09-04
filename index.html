@@ -83,20 +83,20 @@
     <main class="conteudo" id="pagina-inicio">
       <!-- Resumo -->
       <div class="resumo">
-        <button id="card-disponivel" class="card card--acao" type="button">
-          <span class="card__rotulo">Dinheiro disponível <span class="card__editar">gerenciar</span></span>
-          <span id="valor-disponivel" class="card__valor">R$ 0,00</span>
-        </button>
-
         <div class="resumo__linha">
-          <div class="card card--pequeno">
-            <span class="card__rotulo">Total a pagar</span>
+          <button id="card-disponivel" class="card card--acao card--pequeno card--entrada" type="button">
+            <span class="card__rotulo">↑ Entradas <span class="card__editar">gerenciar</span></span>
+            <span id="valor-disponivel" class="card__valor card__valor--positivo">R$ 0,00</span>
+          </button>
+          <div class="card card--pequeno card--saida">
+            <span class="card__rotulo">↓ Saídas</span>
             <span id="valor-total" class="card__valor card__valor--neutro">R$ 0,00</span>
           </div>
-          <div class="card card--pequeno">
-            <span class="card__rotulo">Saldo restante</span>
-            <span id="valor-saldo" class="card__valor">R$ 0,00</span>
-          </div>
+        </div>
+
+        <div class="card card--saldo">
+          <span class="card__rotulo">Saldo do mês</span>
+          <span id="valor-saldo" class="card__valor">R$ 0,00</span>
         </div>
 
         <div class="progresso" aria-hidden="true">
@@ -130,18 +130,18 @@
       <div class="resumo">
         <div class="resumo__linha">
           <div class="card card--pequeno">
-            <span class="card__rotulo">Total pago</span>
-            <span id="rel-total-pago" class="card__valor card__valor--positivo">R$ 0,00</span>
+            <span class="card__rotulo">↑ Entradas</span>
+            <span id="rel-total-disponivel" class="card__valor card__valor--positivo">R$ 0,00</span>
           </div>
           <div class="card card--pequeno">
-            <span class="card__rotulo">Total pendente</span>
-            <span id="rel-total-pendente" class="card__valor card__valor--neutro">R$ 0,00</span>
+            <span class="card__rotulo">↓ Saídas pagas</span>
+            <span id="rel-total-pago" class="card__valor card__valor--neutro">R$ 0,00</span>
           </div>
         </div>
         <div class="resumo__linha">
           <div class="card card--pequeno">
-            <span class="card__rotulo">Total disponível</span>
-            <span id="rel-total-disponivel" class="card__valor card__valor--neutro">R$ 0,00</span>
+            <span class="card__rotulo">↓ Saídas pendentes</span>
+            <span id="rel-total-pendente" class="card__valor card__valor--neutro">R$ 0,00</span>
           </div>
           <div class="card card--pequeno">
             <span class="card__rotulo">Saldo do período</span>
@@ -220,10 +220,12 @@
           <textarea id="conta-observacao" rows="3" maxlength="300" placeholder="Ex.: parcela 3/12, referente a..."></textarea>
         </label>
 
-        <label class="campo-checkbox">
-          <input type="checkbox" id="conta-parcelado" />
-          <span>É uma compra parcelada?</span>
-        </label>
+        <p class="campo__titulo">Essa conta se repete?</p>
+        <div class="tipo-conta-toggle" role="group" aria-label="Repetição da conta">
+          <button type="button" class="tipo-conta-btn is-ativo" data-tipo="unica">Única</button>
+          <button type="button" class="tipo-conta-btn" data-tipo="parcelada">Parcelada</button>
+          <button type="button" class="tipo-conta-btn" data-tipo="recorrente">Recorrente</button>
+        </div>
 
         <div id="campo-parcelamento" hidden>
           <div class="parcela-grid">
@@ -238,7 +240,13 @@
           </div>
           <p class="parcela-info">Valor total da compra: <strong id="parcela-valor-total">R$ 0,00</strong></p>
           <p class="campo__ajuda">
-            A partir do mês seguinte, a próxima parcela é lançada sozinha quando você abrir aquele mês no app.
+            A partir do mês seguinte, a próxima parcela é lançada sozinha quando você abrir aquele mês no app — até chegar na última.
+          </p>
+        </div>
+
+        <div id="campo-recorrente" hidden>
+          <p class="campo__ajuda">
+            🔁 Essa conta será lançada automaticamente, com o mesmo valor, todo mês — até alguém parar a repetição (pelo modal de detalhes).
           </p>
         </div>
 
@@ -269,7 +277,7 @@
         <span id="detalhe-desconto-texto" class="detalhe__valor-texto detalhe__valor-texto--positivo">—</span>
       </div>
       <div class="detalhe__linha" id="detalhe-linha-parcela" hidden>
-        <span class="detalhe__rotulo">Parcela</span>
+        <span class="detalhe__rotulo">Repetição</span>
         <span id="detalhe-parcela-texto">—</span>
       </div>
       <div class="detalhe__linha" id="detalhe-linha-vencimento" hidden>
@@ -282,6 +290,8 @@
       </div>
 
       <p id="detalhe-autor" class="detalhe__autor" hidden></p>
+
+      <button type="button" id="btn-detalhe-parar-repeticao" class="detalhe__link-parar" hidden>Parar de repetir</button>
 
       <div class="modal__acoes" id="detalhe-acoes-principais">
         <button type="button" id="btn-detalhe-excluir" class="btn btn--ghost btn--ghost-perigo">Excluir</button>
@@ -303,11 +313,11 @@
   </div>
 
 
-  <!-- ============ MODAL: DINHEIRO DISPONÍVEL ============ -->
+  <!-- ============ MODAL: ENTRADAS ============ -->
   <div id="modal-renda" class="modal" hidden>
     <div class="modal__fundo" data-fechar-modal></div>
     <div class="modal__caixa" role="dialog" aria-modal="true" aria-labelledby="modal-renda-titulo">
-      <h2 id="modal-renda-titulo" class="modal__titulo">Dinheiro disponível</h2>
+      <h2 id="modal-renda-titulo" class="modal__titulo">Entradas do mês</h2>
 
       <ul id="lista-rendas" class="lista-rendas"></ul>
       <p id="rendas-vazio" class="lista-vazia lista-vazia--compacta" hidden>Nenhuma fonte cadastrada ainda.</p>

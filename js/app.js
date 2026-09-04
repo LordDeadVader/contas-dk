@@ -50,10 +50,12 @@ const Store = (() => {
   }
 
   /**
-   * Lança automaticamente a próxima parcela de compras parceladas, quando o
-   * mês seguinte ao da última parcela conhecida é justamente o mês que está
-   * sendo aberto agora. Ou seja: a parcela "lembra" de si mesma assim que
-   * você chega no mês dela — sem precisar recadastrar nada.
+   * Lança automaticamente a próxima parcela/mensalidade de contas que se
+   * repetem (parceladas, com total definido, ou recorrentes, sem fim —
+   * "total" fica null), quando o mês seguinte ao do último lançamento
+   * conhecido é justamente o mês que está sendo aberto agora. Ou seja: a
+   * conta "lembra" de si mesma assim que você chega no mês dela — sem
+   * precisar recadastrar nada. Uma série marcada como encerrada não avança.
    */
   function _avancarParcelamentos(chaveAlvo, dados) {
     const alvo = dados[chaveAlvo];
@@ -61,9 +63,11 @@ const Store = (() => {
     let mudou = false;
 
     const ultimaPorGrupo = {}; // grupoId -> { chave, conta }
+    const gruposEncerrados = new Set();
     for (const chaveMes of Object.keys(dados)) {
       for (const c of dados[chaveMes]?.contas || []) {
         if (!c.parcelamento) continue;
+        if (c.parcelamento.encerrado) gruposEncerrados.add(c.parcelamento.grupoId);
         const atual = ultimaPorGrupo[c.parcelamento.grupoId];
         if (!atual || chaveMes > atual.chave) {
           ultimaPorGrupo[c.parcelamento.grupoId] = { chave: chaveMes, conta: c };
@@ -72,9 +76,11 @@ const Store = (() => {
     }
 
     for (const grupoId in ultimaPorGrupo) {
+      if (gruposEncerrados.has(grupoId)) continue;
+
       const { chave: chaveUltima, conta: contaUltima } = ultimaPorGrupo[grupoId];
       const { atual, total } = contaUltima.parcelamento;
-      if (atual >= total) continue;
+      if (total !== null && atual >= total) continue; // parcelada e já chegou na última
       if (_somarMes(chaveUltima, 1) !== chaveAlvo) continue;
 
       const jaExiste = alvo.contas.some((c) => c.parcelamento && c.parcelamento.grupoId === grupoId);
@@ -200,6 +206,14 @@ const Store = (() => {
     _salvarTudo(dados);
   }
 
+  /** Para uma série parcelada/recorrente de vez: nenhum mês futuro lança mais essa conta. */
+  function encerrarRepeticao(chave, id) {
+    const dados = _lerTudo();
+    const conta = (dados[chave]?.contas || []).find((c) => c.id === id);
+    if (conta && conta.parcelamento) conta.parcelamento.encerrado = true;
+    _salvarTudo(dados);
+  }
+
   /** Chaves ("AAAA-MM") de todos os meses que já têm algo salvo, em ordem crescente. */
   function chavesExistentes() {
     return Object.keys(_lerTudo()).sort();
@@ -229,6 +243,7 @@ const Store = (() => {
     alternarPaga,
     definirPagamento,
     excluirConta,
+    encerrarRepeticao,
     chavesExistentes,
     obterSomenteLeitura,
   };
@@ -517,7 +532,9 @@ const Painel = (() => {
         ? `<span class="conta__autor">${escapar(conta.criadoPor)}</span>`
         : '';
       const parcelaChip = conta.parcelamento
-        ? `<span class="conta__parcela">${conta.parcelamento.atual}/${conta.parcelamento.total}</span>`
+        ? conta.parcelamento.total
+          ? `<span class="conta__parcela">${conta.parcelamento.atual}/${conta.parcelamento.total}</span>`
+          : '<span class="conta__parcela conta__parcela--recorrente">🔁 recorrente</span>'
         : '';
       const temDesconto = conta.paga && conta.desconto > 0;
       const valorTexto = temDesconto
@@ -712,11 +729,11 @@ const Relatorios = (() => {
           <span class="rel-usuario-nome"></span>
         </div>
         <div class="rel-usuario-linha">
-          <span>Contas cadastradas</span>
+          <span>↓ Saídas cadastradas</span>
           <strong>${dado.contasQtd} · ${Formato.dinheiro(dado.contasValor)}</strong>
         </div>
         <div class="rel-usuario-linha">
-          <span>Dinheiro adicionado</span>
+          <span>↑ Entradas adicionadas</span>
           <strong>${dado.rendasQtd} · ${Formato.dinheiro(dado.rendasValor)}</strong>
         </div>`;
       card.querySelector('.rel-usuario-inicial').textContent = nome.charAt(0).toUpperCase();
@@ -761,6 +778,7 @@ const Relatorios = (() => {
 const Modais = (() => {
   let alvoExclusao = null;
   let tipoRendaAtual = 'dinheiro';
+  let tipoContaAtual = 'unica';
 
   function init() {
     // fechar ao clicar no fundo ou nos botões marcados
@@ -772,9 +790,9 @@ const Modais = (() => {
     });
 
     // mostra/esconde os campos de parcelamento
-    $('#conta-parcelado').addEventListener('change', (e) => {
-      $('#campo-parcelamento').hidden = !e.target.checked;
-      atualizarValorTotalParcela();
+    // alterna entre "Única", "Parcelada" e "Recorrente" no formulário de nova conta
+    $$('.tipo-conta-btn').forEach((btn) => {
+      btn.addEventListener('click', () => selecionarTipoConta(btn.dataset.tipo));
     });
     $('#conta-valor').addEventListener('input', atualizarValorTotalParcela);
     $('#conta-parcela-total').addEventListener('input', atualizarValorTotalParcela);
@@ -788,7 +806,7 @@ const Modais = (() => {
       if (!nome) return;
 
       let parcelamento = null;
-      if ($('#conta-parcelado').checked) {
+      if (tipoContaAtual === 'parcelada') {
         const atual = Math.max(1, parseInt($('#conta-parcela-atual').value, 10) || 1);
         const total = Math.max(atual, parseInt($('#conta-parcela-total').value, 10) || 0);
         if (!total) {
@@ -796,6 +814,8 @@ const Modais = (() => {
           return;
         }
         parcelamento = { atual, total };
+      } else if (tipoContaAtual === 'recorrente') {
+        parcelamento = { atual: 1, total: null }; // sem fim: repete até alguém encerrar
       }
 
       const usuario = Auth.sessaoAtual()?.usuario;
@@ -847,11 +867,19 @@ const Modais = (() => {
 
   function abrirConta() {
     $('#form-conta').reset();
-    $('#campo-parcelamento').hidden = true;
     $('#conta-parcela-atual').value = 1;
     $('#parcela-valor-total').textContent = Formato.dinheiro(0);
+    selecionarTipoConta('unica');
     abrir('modal-conta');
     setTimeout(() => $('#conta-nome').focus(), 50);
+  }
+
+  function selecionarTipoConta(tipo) {
+    tipoContaAtual = tipo;
+    $$('.tipo-conta-btn').forEach((btn) => btn.classList.toggle('is-ativo', btn.dataset.tipo === tipo));
+    $('#campo-parcelamento').hidden = tipo !== 'parcelada';
+    $('#campo-recorrente').hidden = tipo !== 'recorrente';
+    if (tipo === 'parcelada') atualizarValorTotalParcela();
   }
 
   function atualizarValorTotalParcela() {
@@ -860,7 +888,7 @@ const Modais = (() => {
     $('#parcela-valor-total').textContent = Formato.dinheiro(valor * total);
   }
 
-  /* ---- Dinheiro disponível (várias fontes: dinheiro / conta bancária) ---- */
+  /* ---- Entradas (várias fontes: dinheiro / conta bancária) ---- */
 
   function selecionarTipoRenda(tipo) {
     tipoRendaAtual = tipo;
@@ -935,9 +963,26 @@ const Modais = (() => {
 
     $('#detalhe-linha-parcela').hidden = !conta.parcelamento;
     if (conta.parcelamento) {
-      const totalCompra = conta.valor * conta.parcelamento.total;
-      $('#detalhe-parcela-texto').textContent =
-        `${conta.parcelamento.atual} de ${conta.parcelamento.total} · total da compra ${Formato.dinheiro(totalCompra)}`;
+      let texto;
+      if (conta.parcelamento.total) {
+        const totalCompra = conta.valor * conta.parcelamento.total;
+        texto = `${conta.parcelamento.atual}ª de ${conta.parcelamento.total} · total da compra ${Formato.dinheiro(totalCompra)}`;
+      } else {
+        texto = '🔁 Recorrente · lançada automaticamente todo mês';
+      }
+      if (conta.parcelamento.encerrado) texto += ' · série encerrada';
+      $('#detalhe-parcela-texto').textContent = texto;
+    }
+
+    const btnParar = $('#btn-detalhe-parar-repeticao');
+    btnParar.hidden = !conta.parcelamento || conta.parcelamento.encerrado;
+    if (conta.parcelamento && !conta.parcelamento.encerrado) {
+      btnParar.textContent = conta.parcelamento.total ? 'Cancelar as parcelas restantes' : 'Parar de repetir esta conta';
+      btnParar.onclick = () => {
+        Store.encerrarRepeticao(chave, conta.id);
+        fecharTodos();
+        toast('Essa conta não vai mais se repetir');
+      };
     }
 
     $('#detalhe-linha-vencimento').hidden = !conta.vencimento;

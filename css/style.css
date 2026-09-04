@@ -270,6 +270,16 @@ input { font-family: inherit; }
 .card--pequeno { padding: 14px; }
 .card--pequeno .card__valor { font-size: 1.15rem; }
 
+.card--entrada { border-color: rgba(16, 185, 129, .25); }
+.card--saida { border-color: rgba(148, 163, 184, .25); }
+
+.card--saldo {
+  align-items: center;
+  text-align: center;
+  padding: 18px;
+}
+.card--saldo .card__valor { font-size: 1.9rem; }
+
 .progresso {
   height: 8px;
   background: var(--bg-elevado-2);
@@ -380,6 +390,7 @@ input { font-family: inherit; }
   font-weight: 700;
   vertical-align: middle;
 }
+.conta__parcela--recorrente { color: var(--primaria); }
 .conta__valor-original {
   color: var(--texto-suave);
   opacity: .7;
@@ -522,20 +533,6 @@ input { font-family: inherit; }
 .campo input:focus,
 .campo textarea:focus { border-color: var(--primaria); }
 
-.campo-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-  font-size: .95rem;
-  color: var(--texto);
-}
-.campo-checkbox input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  accent-color: var(--primaria);
-}
 
 .parcela-grid { display: flex; gap: 10px; }
 .parcela-grid .campo { flex: 1; }
@@ -605,6 +602,19 @@ input { font-family: inherit; }
 
 .detalhe__autor { font-size: .75rem; color: var(--texto-suave); padding-top: 10px; }
 
+.detalhe__link-parar {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: none;
+  border: none;
+  color: var(--texto-suave);
+  font-size: .82rem;
+  text-decoration: underline;
+  padding: 10px 0 4px;
+}
+.detalhe__link-parar:active { color: var(--perigo); }
+
 
 /* ============ LISTA DE RENDAS (DINHEIRO DISPONÍVEL) ============ */
 
@@ -656,13 +666,15 @@ input { font-family: inherit; }
 .renda-total strong { font-size: 1.15rem; color: var(--primaria); }
 
 .renda-tipo-toggle,
-.periodo-toggle {
+.periodo-toggle,
+.tipo-conta-toggle {
   display: flex;
   gap: 8px;
   margin-bottom: 14px;
 }
 .renda-tipo-btn,
-.periodo-btn {
+.periodo-btn,
+.tipo-conta-btn {
   flex: 1;
   padding: 10px;
   border-radius: 12px;
@@ -673,12 +685,15 @@ input { font-family: inherit; }
   font-weight: 600;
 }
 .renda-tipo-btn.is-ativo,
-.periodo-btn.is-ativo {
+.periodo-btn.is-ativo,
+.tipo-conta-btn.is-ativo {
   border-color: var(--primaria);
   color: var(--primaria);
   background: rgba(16, 185, 129, .1);
 }
 .periodo-btn { background: var(--bg-elevado); }
+
+.campo__titulo { font-size: .85rem; color: var(--texto-suave); margin-bottom: 8px; }
 
 
 /* ============ RELATÓRIOS ============ */
