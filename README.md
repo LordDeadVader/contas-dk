@@ -7,7 +7,7 @@ Web app (PWA) de controle financeiro mensal, de uso pessoal do **Davi** e da **K
 - **Login por PIN** (sem cadastro): escolhe o usuário e digita `1234`.
 - **Painel do mês**: navegue entre meses com as setas.
 - **Resumo**: Dinheiro disponível (editável), Total a pagar e Saldo restante (verde/vermelho).
-- **Lista de contas**: adicione, marque como paga (fica riscada) ou exclua. O resumo atualiza sozinho.
+- **Lista de contas**: adicione (com data de vencimento opcional, só pra registro), marque como paga (fica riscada) ou exclua. O resumo atualiza sozinho. Conta vencida e ainda não paga aparece destacada em vermelho.
 - **Offline**: funciona sem internet e pode ser **instalado na tela inicial** do celular.
 - Os dados ficam no `localStorage` do próprio aparelho (nada vai para servidor).
 

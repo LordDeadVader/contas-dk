@@ -350,6 +350,14 @@ input { font-family: inherit; }
 .conta--paga .conta__nome { text-decoration: line-through; }
 .conta__valor { font-size: .9rem; color: var(--texto-suave); }
 
+.conta__vencimento {
+  display: inline-block;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--borda);
+}
+.conta__vencimento--atrasada { color: var(--perigo); font-weight: 600; }
+
 .conta__excluir {
   background: transparent;
   border: none;
@@ -424,6 +432,7 @@ input { font-family: inherit; }
 
 .campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .campo span { font-size: .85rem; color: var(--texto-suave); }
+.campo__opcional { opacity: .7; }
 .campo input {
   padding: 14px;
   border-radius: 12px;
@@ -432,6 +441,7 @@ input { font-family: inherit; }
   color: var(--texto);
   font-size: 1.05rem;
   outline: none;
+  color-scheme: dark;
 }
 .campo input:focus { border-color: var(--primaria); }
 
@@ -476,4 +486,5 @@ input { font-family: inherit; }
   .btn--primario { color: #04231a; }
   .conta__check:checked::after { border-color: #fff; }
   .btn--primario .conta__check:checked::after { border-color: #04231a; }
+  .campo input { color-scheme: light; }
 }

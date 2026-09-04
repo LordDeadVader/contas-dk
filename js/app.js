@@ -42,13 +42,14 @@ const Store = (() => {
     _salvarTudo(dados);
   }
 
-  function adicionarConta(chave, nome, valor) {
+  function adicionarConta(chave, nome, valor, vencimento) {
     const dados = _lerTudo();
     if (!dados[chave]) dados[chave] = { renda: 0, contas: [] };
     dados[chave].contas.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       nome: nome.trim(),
       valor: Math.max(0, Number(valor) || 0),
+      vencimento: vencimento || null, // "AAAA-MM-DD" ou null (opcional, só pra registro)
       paga: false,
     });
     _salvarTudo(dados);
@@ -101,7 +102,31 @@ const Formato = (() => {
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
-  return { dinheiro, paraNumero, chaveMes, rotuloMes };
+  /** "AAAA-MM-DD" -> Date local (evita o problema de fuso horário do "new Date(string)") */
+  function dataLocal(iso) {
+    const [ano, mes, dia] = iso.split('-').map(Number);
+    return new Date(ano, mes - 1, dia);
+  }
+
+  /** "AAAA-MM-DD" -> "dd/mm" (ou "dd/mm/aaaa" se for de outro ano) */
+  function dataCurta(iso) {
+    if (!iso) return '';
+    const d = dataLocal(iso);
+    const hoje = new Date();
+    const opcoes = { day: '2-digit', month: '2-digit' };
+    if (d.getFullYear() !== hoje.getFullYear()) opcoes.year = 'numeric';
+    return d.toLocaleDateString('pt-BR', opcoes);
+  }
+
+  /** true se a data (AAAA-MM-DD) já passou em relação a hoje */
+  function dataVencida(iso) {
+    if (!iso) return false;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    return dataLocal(iso) < hoje;
+  }
+
+  return { dinheiro, paraNumero, chaveMes, rotuloMes, dataCurta, dataVencida };
 })();
 
 
@@ -260,14 +285,22 @@ const Painel = (() => {
     const ordenadas = [...contas].sort((a, b) => Number(a.paga) - Number(b.paga));
 
     for (const conta of ordenadas) {
+      const atrasada = !conta.paga && Formato.dataVencida(conta.vencimento);
       const li = document.createElement('li');
       li.className = 'conta' + (conta.paga ? ' conta--paga' : '');
+
+      const venc = conta.vencimento
+        ? `<span class="conta__vencimento${atrasada ? ' conta__vencimento--atrasada' : ''}">
+             ${atrasada ? 'venceu em' : 'vence em'} ${Formato.dataCurta(conta.vencimento)}
+           </span>`
+        : '';
+
       li.innerHTML = `
         <input type="checkbox" class="conta__check" ${conta.paga ? 'checked' : ''}
                aria-label="Marcar ${conta.nome} como paga" />
         <div class="conta__info">
           <div class="conta__nome">${escapar(conta.nome)}</div>
-          <div class="conta__valor">${Formato.dinheiro(conta.valor)}</div>
+          <div class="conta__valor">${Formato.dinheiro(conta.valor)}${venc}</div>
         </div>
         <button class="conta__excluir" type="button" aria-label="Excluir ${escapar(conta.nome)}">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12M19 4h-3.5l-1-1h-5l-1 1H5v2h14V4Z"/></svg>
@@ -317,8 +350,9 @@ const Modais = (() => {
       e.preventDefault();
       const nome = $('#conta-nome').value.trim();
       const valor = Formato.paraNumero($('#conta-valor').value);
+      const vencimento = $('#conta-vencimento').value || null;
       if (!nome) return;
-      Store.adicionarConta(Painel.chave(), nome, valor);
+      Store.adicionarConta(Painel.chave(), nome, valor, vencimento);
       fecharTodos();
       Painel.render();
       toast('Conta adicionada');
