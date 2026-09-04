@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Controle financeiro mensal do Davi e da Kauane." />
+  <title>Contas DK</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Contas" />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ============ TELA 1: LOGIN ============ -->
+  <section id="tela-login" class="tela tela--centro">
+    <div class="login-card">
+      <div class="login-logo">DK</div>
+      <h1 class="login-titulo">Quem está acessando?</h1>
+
+      <div class="login-usuarios">
+        <button class="btn-usuario" data-usuario="Davi" type="button">
+          <span class="btn-usuario__inicial">D</span>
+          <span>Davi</span>
+        </button>
+        <button class="btn-usuario" data-usuario="Kauane" type="button">
+          <span class="btn-usuario__inicial">K</span>
+          <span>Kauane</span>
+        </button>
+      </div>
+
+      <form id="form-login" class="login-form" autocomplete="off" hidden>
+        <p class="login-oi">Olá, <strong id="login-nome-selecionado"></strong> 👋</p>
+        <label for="input-pin" class="login-label">Digite seu PIN</label>
+        <input
+          id="input-pin"
+          class="input-pin"
+          type="password"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="4"
+          placeholder="••••"
+          aria-label="PIN de 4 dígitos"
+        />
+        <p id="login-erro" class="login-erro" role="alert" hidden>PIN incorreto. Tente de novo.</p>
+        <div class="login-acoes">
+          <button type="button" id="btn-voltar-usuario" class="btn btn--ghost">Voltar</button>
+          <button type="submit" class="btn btn--primario">Entrar</button>
+        </div>
+      </form>
+    </div>
+    <p class="login-rodape">Uso pessoal · Davi &amp; Kauane</p>
+  </section>
+
+
+  <!-- ============ TELA 2: PAINEL ============ -->
+  <section id="tela-painel" class="tela" hidden>
+    <header class="cabecalho">
+      <div class="cabecalho__topo">
+        <span class="cabecalho__ola">Oi, <strong id="painel-usuario"></strong></span>
+        <button id="btn-sair" class="btn-icone" type="button" title="Sair" aria-label="Sair">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M16 17v-3H9v-4h7V7l5 5-5 5M14 2a2 2 0 0 1 2 2v2h-2V4H5v16h9v-2h2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9Z"/></svg>
+        </button>
+      </div>
+
+      <div class="mes-nav">
+        <button id="btn-mes-anterior" class="btn-icone" type="button" aria-label="Mês anterior">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+        </button>
+        <h1 id="mes-titulo" class="mes-titulo">—</h1>
+        <button id="btn-mes-proximo" class="btn-icone" type="button" aria-label="Próximo mês">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="conteudo">
+      <!-- Resumo -->
+      <div class="resumo">
+        <button id="card-disponivel" class="card card--acao" type="button">
+          <span class="card__rotulo">Dinheiro disponível <span class="card__editar">editar</span></span>
+          <span id="valor-disponivel" class="card__valor">R$ 0,00</span>
+        </button>
+
+        <div class="resumo__linha">
+          <div class="card card--pequeno">
+            <span class="card__rotulo">Total a pagar</span>
+            <span id="valor-total" class="card__valor card__valor--neutro">R$ 0,00</span>
+          </div>
+          <div class="card card--pequeno">
+            <span class="card__rotulo">Saldo restante</span>
+            <span id="valor-saldo" class="card__valor">R$ 0,00</span>
+          </div>
+        </div>
+
+        <div class="progresso" aria-hidden="true">
+          <div id="progresso-barra" class="progresso__barra"></div>
+        </div>
+        <p id="progresso-texto" class="progresso__texto">Nenhuma conta paga ainda</p>
+      </div>
+
+      <!-- Lista de contas -->
+      <div class="lista-cabecalho">
+        <h2>Contas do mês</h2>
+        <span id="contador-contas" class="lista-contador">0</span>
+      </div>
+
+      <ul id="lista-contas" class="lista-contas"></ul>
+
+      <p id="lista-vazia" class="lista-vazia">
+        Nenhuma conta neste mês.<br />Toque em <strong>+ Nova conta</strong> para começar.
+      </p>
+    </main>
+
+    <footer class="rodape-acoes">
+      <button id="btn-instalar" class="btn btn--ghost btn--instalar" type="button" hidden>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M5 20h14v-2H5v2M19 9h-4V3H9v6H5l7 7 7-7Z"/></svg>
+        Instalar app
+      </button>
+      <button id="btn-nova-conta" class="btn btn--primario btn--grande" type="button">+ Nova conta</button>
+    </footer>
+  </section>
+
+
+  <!-- ============ MODAL: NOVA CONTA ============ -->
+  <div id="modal-conta" class="modal" hidden>
+    <div class="modal__fundo" data-fechar-modal></div>
+    <div class="modal__caixa" role="dialog" aria-modal="true" aria-labelledby="modal-conta-titulo">
+      <h2 id="modal-conta-titulo" class="modal__titulo">Nova conta</h2>
+      <form id="form-conta" autocomplete="off">
+        <label class="campo">
+          <span>Nome da conta</span>
+          <input id="conta-nome" type="text" placeholder="Ex.: Aluguel, Luz, Cartão..." required maxlength="40" />
+        </label>
+        <label class="campo">
+          <span>Valor (R$)</span>
+          <input id="conta-valor" type="text" inputmode="decimal" placeholder="0,00" required />
+        </label>
+        <div class="modal__acoes">
+          <button type="button" class="btn btn--ghost" data-fechar-modal>Cancelar</button>
+          <button type="submit" class="btn btn--primario">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ============ MODAL: DINHEIRO DISPONÍVEL ============ -->
+  <div id="modal-renda" class="modal" hidden>
+    <div class="modal__fundo" data-fechar-modal></div>
+    <div class="modal__caixa" role="dialog" aria-modal="true" aria-labelledby="modal-renda-titulo">
+      <h2 id="modal-renda-titulo" class="modal__titulo">Dinheiro disponível</h2>
+      <form id="form-renda" autocomplete="off">
+        <label class="campo">
+          <span>Quanto entrou este mês? (R$)</span>
+          <input id="renda-valor" type="text" inputmode="decimal" placeholder="0,00" required />
+        </label>
+        <div class="modal__acoes">
+          <button type="button" class="btn btn--ghost" data-fechar-modal>Cancelar</button>
+          <button type="submit" class="btn btn--primario">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ============ MODAL: CONFIRMAR EXCLUSÃO ============ -->
+  <div id="modal-confirma" class="modal" hidden>
+    <div class="modal__fundo" data-fechar-modal></div>
+    <div class="modal__caixa" role="dialog" aria-modal="true" aria-labelledby="modal-confirma-titulo">
+      <h2 id="modal-confirma-titulo" class="modal__titulo">Excluir conta?</h2>
+      <p id="modal-confirma-texto" class="modal__texto">Esta ação não pode ser desfeita.</p>
+      <div class="modal__acoes">
+        <button type="button" class="btn btn--ghost" data-fechar-modal>Cancelar</button>
+        <button type="button" id="btn-confirma-excluir" class="btn btn--perigo">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
